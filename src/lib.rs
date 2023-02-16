@@ -12,9 +12,13 @@ pub struct Args {
     /// Path of the file to inspect
     pub filepath: String,
 
+    /// First row contains headers
+    #[arg(default_value = "true", long)]
+    has_headers: bool,
+
     /// Number of rows to display
-    #[arg(default_value = "10", short, long)]
-    nrows: usize,
+    #[arg(short, long)]
+    nrows: Option<usize>,
 
     /// Subset of columns to display
     /// 
@@ -33,21 +37,42 @@ impl CsvData {
     }   
 }
 
-fn read_csv(path: &str) -> Result<CsvData, Box<dyn Error>> {
-    let mut reader = csv::Reader::from_path(path)?;
-    let headers = reader.headers()?.clone();
+fn read_csv(path: &str, has_headers: bool) -> CsvData {
+    let mut reader = csv::ReaderBuilder::new()
+        .has_headers(has_headers)
+        .from_path(path).unwrap();
+
+    let headers = reader.headers().unwrap().clone();
     let mut rows = Vec::new();
     for result in reader.records() {
-        rows.push(result?);
+        rows.push(result.unwrap());
     };
-    Ok(CsvData::new(headers, rows))
+    CsvData::new(headers, rows)
+}
+
+fn format_table(data: &mut CsvData, nrows:Option<usize>, cols: Option<Vec<String>>) {
+    // keep selected nr of rows
+    match nrows {
+        Some(n) => {
+            data.rows = data.rows[0..n].to_vec();
+        },
+        None => ()
+    }
+    
+
+    // keep selected columns
+    match cols {
+        Some(inner) => println!("{:?}", inner),
+        None => println!("No columns selected!")
+    }
 }
 
 fn display_table(data: &CsvData) {
     let mut builder = Builder::default();
 
-    let header: Vec<&str> = data.headers.iter().collect();
-    builder.add_record(header);
+    let header_data: Vec<&str> = data.headers.iter().collect();
+    builder.add_record(header_data);
+
     for row in data.rows.iter() {
         let row_data: Vec<&str> = row.iter().collect();
         builder.add_record(row_data);
@@ -59,7 +84,8 @@ fn display_table(data: &CsvData) {
 }
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
-    let data = read_csv(&args.filepath).unwrap();
+    let mut data = read_csv(&args.filepath, args.has_headers);
+    format_table(&mut data, args.nrows, args.cols);
     display_table(&data);
 
     Ok(())
