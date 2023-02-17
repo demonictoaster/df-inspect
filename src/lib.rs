@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use clap::Parser;
+use csv::StringRecord;
 use tabled::{builder::Builder, Style};
 
 #[derive(Parser, Debug)]
@@ -9,11 +10,11 @@ use tabled::{builder::Builder, Style};
 /// A dataframe inspection tool for the CLI written in Rust
 pub struct Args {
     /// Path of the file to inspect
-    pub filepath: String,
+    filepath: String,
 
     /// First row contains headers (bool, optional)
-    #[arg(default_value = "true", long)]
-    has_headers: bool,
+    #[arg(default_value = "false", long)]
+    no_headers: bool,
 
     /// Number of rows to display (int, optional)
     #[arg(short, long)]
@@ -38,25 +39,34 @@ impl CsvData {
     }
 }
 
-fn read_csv(path: &str, has_headers: bool) -> CsvData {
+fn read_csv(path: &str, no_headers: bool) -> CsvData {
     let mut reader = csv::ReaderBuilder::new()
-        .has_headers(has_headers)
+        .has_headers(!no_headers)
         .from_path(path)
         .unwrap();
 
-    let headers = reader.headers().unwrap().clone();
-    let headers_data: Vec<String> = headers.iter().map(|s| s.to_string()).collect();
+    // TODO: create no-headers case colnames
+    let headers_data = if no_headers {
+        let ncols = reader.headers().unwrap().len();
+        let mut colnames = Vec::new();
+        for i in 0..ncols {
+            colnames.push(format!("col{}", i).to_string());
+        }
+        colnames
+    } else {
+        get_data_from_record(reader.headers().unwrap().clone())
+    };
+
     let mut rows_data = Vec::new();
-    for result in reader.records() {
-        let row_data = result
-            .unwrap()
-            .clone()
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
+    for record in reader.records() {
+        let row_data = get_data_from_record(record.unwrap());
         rows_data.push(row_data);
     }
     CsvData::new(headers_data, rows_data)
+}
+
+fn get_data_from_record(record: StringRecord) -> Vec<String> {
+    record.iter().map(|s| s.to_string()).collect()
 }
 
 fn format_table(data: &mut CsvData, nrows: Option<usize>, cols: Option<Vec<String>>) {
@@ -116,7 +126,7 @@ fn display_table(data: CsvData) {
 }
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
-    let mut data = read_csv(&args.filepath, args.has_headers);
+    let mut data = read_csv(&args.filepath, args.no_headers);
     format_table(&mut data, args.nrows, args.cols);
     display_table(data);
 
