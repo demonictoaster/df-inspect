@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::process;
 
-use df_inspect::{Args};
+use df_inspect::Args;
 
 fn main() {
     let args = Args::parse();

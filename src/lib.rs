@@ -5,7 +5,7 @@ use tabled::{builder::Builder, Style};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-#[clap(author="Michael Vauthey", version, about)]
+#[clap(author = "Michael Vauthey", version, about)]
 /// A dataframe inspection tool for the CLI written in Rust
 pub struct Args {
     /// Path of the file to inspect
@@ -22,7 +22,6 @@ pub struct Args {
     /// Subset of columns to display (string(s), optional)
     #[arg(short, long, num_args(0..))]
     cols: Option<Vec<String>>,
-
 }
 
 pub struct CsvData {
@@ -32,8 +31,11 @@ pub struct CsvData {
 
 impl CsvData {
     fn new(headers: Vec<String>, rows: Vec<Vec<String>>) -> CsvData {
-        CsvData { headers: headers, rows: rows }
-    }   
+        CsvData {
+            headers: headers,
+            rows: rows,
+        }
+    }
 }
 
 fn read_csv(path: &str, has_headers: bool) -> CsvData {
@@ -46,19 +48,24 @@ fn read_csv(path: &str, has_headers: bool) -> CsvData {
     let headers_data: Vec<String> = headers.iter().map(|s| s.to_string()).collect();
     let mut rows_data = Vec::new();
     for result in reader.records() {
-        let row_data = result.unwrap().clone().iter().map(|s| s.to_string()).collect();
+        let row_data = result
+            .unwrap()
+            .clone()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         rows_data.push(row_data);
-    };
+    }
     CsvData::new(headers_data, rows_data)
 }
 
-fn format_table(data: &mut CsvData, nrows:Option<usize>, cols: Option<Vec<String>>) {
+fn format_table(data: &mut CsvData, nrows: Option<usize>, cols: Option<Vec<String>>) {
     // keep selected nr of rows
     match nrows {
         Some(n) => {
             data.rows = data.rows[0..n].to_vec();
-        },
-        None => ()
+        }
+        None => (),
     }
 
     // keep selected columns
@@ -71,16 +78,16 @@ fn format_table(data: &mut CsvData, nrows:Option<usize>, cols: Option<Vec<String
                     if col == header {
                         col_idx.push(idx);
                     }
-                }    
+                }
             }
-            
+
             // filter entries to keep selected columns
             filter_by_index(&mut data.headers, &col_idx);
             for row in data.rows.iter_mut() {
                 filter_by_index(row, &col_idx);
-            };
-        },
-        None => ()
+            }
+        }
+        None => (),
     }
 }
 
