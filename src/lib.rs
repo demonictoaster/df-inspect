@@ -45,7 +45,6 @@ fn read_csv(path: &str, no_headers: bool) -> CsvData {
         .from_path(path)
         .unwrap();
 
-    // TODO: create no-headers case colnames
     let headers_data = if no_headers {
         let ncols = reader.headers().unwrap().len();
         let mut colnames = Vec::new();
@@ -73,7 +72,9 @@ fn format_table(data: &mut CsvData, nrows: Option<usize>, cols: Option<Vec<Strin
     // keep selected nr of rows
     match nrows {
         Some(n) => {
-            data.rows = data.rows[0..n].to_vec();
+            if n < data.rows.len() {
+                data.rows = data.rows[0..n].to_vec();
+            }
         }
         None => (),
     }
@@ -121,7 +122,7 @@ fn display_table(data: CsvData) {
     }
 
     let mut table = builder.build();
-    table.with(Style::ascii_rounded());
+    table.with(Style::rounded());
     println!("{}", table);
 }
 
