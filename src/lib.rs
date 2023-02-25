@@ -103,6 +103,7 @@ fn format_table(data: &mut CsvData, nrows: Option<usize>, cols: Option<Vec<Strin
 }
 
 fn filter_by_index<T>(data: &mut Vec<T>, indexes: &Vec<usize>) {
+    // keeps columns specified in `indexes` vector
     let mut idx: usize = 0;
     data.retain(|_| {
         let v = idx;
@@ -132,4 +133,25 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     display_table(data);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filter_multiple_index() {
+        let mut data = vec!["a", "b", "c", "d"];
+        let idx = vec![0, 2];
+        filter_by_index(&mut data, &idx);
+        assert_eq!(data, vec!["a", "c"]);
+    }
+
+    #[test]
+    fn filter_no_index() {
+        let mut data = vec!["a", "b"];
+        let idx = Vec::new();
+        filter_by_index(&mut data, &idx);
+        assert_eq!(data, Vec::<&str>::new());
+    }
 }
