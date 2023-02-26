@@ -1,0 +1,38 @@
+name: Build 
+run-name: ${{ github.actor }} is running CI 
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    name: macOS
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        action:
+          - build
+          - test
+    steps:
+    - uses: actions/checkout@v3
+    - name: Action
+      run: cargo ${{ matrix.action }} --verbose
+
+  ubuntu:
+    name: ubuntu 
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        action:
+          - build
+          - test
+    steps:
+    - uses: actions/checkout@v3
+    - name: Action
+      run: cargo ${{ matrix.action }} --verbose
